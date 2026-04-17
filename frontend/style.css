@@ -1,0 +1,44 @@
+body {
+  background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+  color: white;
+  font-family: sans-serif;
+}
+
+.hidden { display: none; }
+
+#welcome {
+  text-align: center;
+  margin-top: 40%;
+  font-size: 24px;
+  color: cyan;
+}
+
+.loader {
+  width: 60%;
+  height: 8px;
+  margin: 40% auto;
+  background: linear-gradient(to right, cyan, blue);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo { width: 40px; }
+
+.song {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  margin: 10px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+button {
+  background: #1db954;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+}
