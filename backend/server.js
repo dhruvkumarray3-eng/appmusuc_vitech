@@ -174,7 +174,70 @@ app.get("/api/search", async (req, res) => {
   }
 });
 
+// 🤖 TELEGRAM BOT WEBHOOK
+app.post("/telegram/webhook", async (req, res) => {
+  try {
+    const update = req.body;
+    
+    if (update.message && update.message.text === "/start") {
+      const chatId = update.message.chat.id;
+      const firstName = update.message.from.first_name;
+      const userId = update.message.from.id;
+      
+      // Create or update user
+      let user = await User.findOne({ telegramId: userId });
+      if (!user) {
+        user = new User({
+          telegramId: userId,
+          firstName: firstName,
+          username: update.message.from.username,
+          photoUrl: null,
+          history: [],
+          favorites: [],
+          playlist: []
+        });
+        await user.save();
+      }
+      
+      console.log(`✅ Telegram user registered: ${firstName} (${userId})`);
+    }
+    
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Webhook error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 📝 REGISTER TELEGRAM BOT WEBHOOK
+async function registerWebhook() {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    console.log("⚠️ TELEGRAM_BOT_TOKEN not set - skipping webhook registration");
+    return;
+  }
+  
+  try {
+    const webhookUrl = process.env.WEBHOOK_URL || "http://localhost:3000/telegram/webhook";
+    const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: webhookUrl })
+    });
+    
+    const data = await response.json();
+    if (data.ok) {
+      console.log("🤖 Telegram webhook registered");
+    } else {
+      console.log("⚠️ Webhook registration failed:", data.description);
+    }
+  } catch (e) {
+    console.log("⚠️ Webhook registration error:", e.message);
+  }
+}
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🎵 RADHA MUSIC Backend running on port ${PORT}`);
+  registerWebhook(); // Register bot webhook on startup
 });

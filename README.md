@@ -41,13 +41,137 @@ cd app-music
 ```
 
 ### 2. Set Environment Variables
-Create `.env` file in the root:
+Copy `.env.example` to `.env` and fill in your credentials:
+```bash
+cp .env.example .env
+```
+
+Update `.env` with:
 ```env
-MONGODB_URI=mongodb+srv://rj5706603:O95nvJYxapyDHfkw@cluster0.fzmckei.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-YOUTUBE_API_KEY=AIzaSyAJwGWTd-xoRRZLaA-fL9naZJ7d7Ufqebg
-TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN
+MONGODB_URI=your_mongodb_uri
+YOUTUBE_API_KEY=your_youtube_api_key
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 PORT=3000
 ```
+
+### 3. Install Dependencies (Backend)
+```bash
+cd backend
+npm install
+```
+
+### 4. Start Servers
+
+**Backend:**
+```bash
+cd backend
+npm start
+# or
+node server.js
+```
+
+**Frontend:**
+```bash
+cd frontend
+python3 -m http.server 8000
+```
+
+Open `http://localhost:8000` in your browser!
+
+## 🤖 Telegram Bot Integration
+
+1. Create a bot with [@BotFather](https://t.me/botfather) on Telegram
+2. Get your bot token
+3. Add to `.env`:
+   ```env
+   TELEGRAM_BOT_TOKEN=your_bot_token_here
+   ```
+4. Backend will auto-register webhook (for production, set `WEBHOOK_URL` in `.env`)
+
+## 🌐 Deploy to Vercel
+
+1. Push code to GitHub
+2. Go to [Vercel](https://vercel.com)
+3. Import your GitHub repo
+4. Add environment variables in Vercel dashboard
+5. Deploy! 🚀
+
+## 📁 Project Structure
+
+```
+app-music/
+├── backend/
+│   ├── server.js       # Express server with MongoDB
+│   ├── package.json
+│   └── package-lock.json
+├── frontend/
+│   ├── index.html      # UI structure
+│   ├── script.js       # Music player logic
+│   ├── style.css       # Glassmorphic design
+│   └── package.json
+├── .env                # Environment variables (DO NOT COMMIT)
+├── .env.example        # Example environment file
+├── vercel.json         # Vercel deployment config
+└── README.md           # This file
+```
+
+## 🎨 API Endpoints
+
+### Backend (`http://localhost:3000`)
+
+- `GET /` - Health check
+- `POST /auth/telegram` - Authenticate with Telegram
+- `POST /history` - Save played songs
+- `GET /history/:telegramId` - Get user history
+- `POST /favorites/add` - Add song to favorites
+- `GET /favorites/:telegramId` - Get user favorites
+- `GET /user/:telegramId` - Get user profile
+- `POST /telegram/webhook` - Telegram bot webhook
+- `GET /api/search` - Search songs (JioSaavn API proxy)
+
+## 📸 Features in Detail
+
+### 🔍 YouTube Search
+- Powered by YouTube API v3
+- 15 search results per query
+- Auto-filtered adult content
+
+### 🎶 Lyrics Display
+- Powered by Lyrics.ovh API
+- Real-time lyrics fetching
+- Fallback if not available
+
+### 💾 History & Favorites
+- Saved to MongoDB
+- Persistent per user
+- Sync across devices
+
+### 🎤 Voice Search
+- Uses Web Speech API
+- Works in Chrome, Firefox, Edge
+- 15-second recording timeout
+
+## 🐛 Troubleshooting
+
+**"YouTube API Error"** → Check if API key is valid in `.env`
+
+**"MongoDB Connection Failed"** → Verify MongoDB URI and network access
+
+**"Telegram Token Invalid"** → Double-check token from @BotFather
+
+**"CORS Error"** → Backend should have CORS enabled automatically
+
+## 📝 License
+
+MIT License - Feel free to use and modify!
+
+## 👨‍💻 Author
+
+Created with ❤️ for music lovers
+
+---
+
+**Happy Listening! 🎵**
 
 ### 3. Install Backend Dependencies
 ```bash
