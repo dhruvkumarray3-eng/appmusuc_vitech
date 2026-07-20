@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "RADHA MUSIC"
+title = "NOBITA MUSIC"
 version = "1.0.0"
 id = "artifacts/radha-music"
 router = "path"
