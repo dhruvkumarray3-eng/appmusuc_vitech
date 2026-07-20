@@ -3,8 +3,6 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
-import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
-
 const rawPort = process.env.PORT;
 
 if (!rawPort) {
@@ -32,8 +30,6 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // Only show the error overlay in dev, not in Telegram Mini App or production
-    ...(process.env.NODE_ENV !== 'production' ? [runtimeErrorOverlay()] : []),
     ...(process.env.NODE_ENV !== 'production' &&
     process.env.REPL_ID !== undefined
       ? [
@@ -70,6 +66,9 @@ export default defineConfig({
     strictPort: true,
     host: '0.0.0.0',
     allowedHosts: true,
+    hmr: {
+      overlay: false,   // ← error popup kabhi nahi dikhega
+    },
     fs: {
       strict: true,
     },
