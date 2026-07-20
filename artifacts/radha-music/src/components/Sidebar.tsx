@@ -3,9 +3,24 @@ import { useAuth } from "@/lib/auth-context";
 import { Home, History, Heart, ListMusic, Disc3, Shield, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+function Avatar({ photo, name, isOwner, size = "sm" }: { photo: string | null; name: string | null; isOwner: boolean; size?: "sm" | "lg" }) {
+  const letter = ((name?.[0] ?? (isOwner ? "O" : "U"))).toUpperCase();
+  const dim = size === "lg" ? "w-10 h-10" : "w-8 h-8";
+  return (
+    <div className={`${dim} rounded-full overflow-hidden bg-primary/30 flex items-center justify-center shrink-0 relative`}>
+      {photo
+        ? <img src={photo} alt="avatar" className="w-full h-full object-cover" />
+        : isOwner
+          ? <Shield className="w-4 h-4 text-yellow-400" />
+          : <span className="text-sm font-bold text-primary">{letter}</span>
+      }
+    </div>
+  );
+}
+
 export function Sidebar() {
   const [location] = useLocation();
-  const { isOwner, telegramId } = useAuth();
+  const { isOwner, telegramId, profileName, profilePhoto } = useAuth();
 
   const links = [
     { href: "/", label: "Player", icon: Home },
@@ -49,15 +64,10 @@ export function Sidebar() {
         <Link href="/profile">
           <div className="bg-background/50 rounded-xl p-4 border border-border flex items-center justify-between hover:border-primary/40 transition-colors cursor-pointer group">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center shrink-0">
-                {isOwner
-                  ? <Shield className="w-4 h-4 text-yellow-400" />
-                  : <User className="w-4 h-4 text-primary" />
-                }
-              </div>
+              <Avatar photo={profilePhoto} name={profileName} isOwner={isOwner} />
               <div className="truncate">
                 <p className="text-sm font-medium text-foreground truncate">
-                  {isOwner ? "Owner" : "User"}
+                  {profileName || (isOwner ? "Owner" : "User")}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {telegramId ? `#${telegramId}` : "Guest"}

@@ -1,23 +1,29 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface AuthContextType {
-  unlocked: boolean;       // kya app sabke liye khuli hai?
-  isOwner: boolean;        // kya yeh owner ka browser hai?
-  telegramId: string | null; // current user ka Telegram ID (WebApp API ya owner localStorage)
+  unlocked: boolean;
+  isOwner: boolean;
+  telegramId: string | null;
+  profileName: string | null;
+  profilePhoto: string | null;
   loading: boolean;
   ownerLogin: (telegramId: string, password: string) => Promise<{ ok: boolean; reason?: string }>;
   ownerLogout: (telegramId: string) => Promise<void>;
-  userLogout: () => void; // regular user — clears local state only
+  userLogout: () => void;
+  updateProfile: (name: string, photo: string | null) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   unlocked: false,
   isOwner: false,
   telegramId: null,
+  profileName: null,
+  profilePhoto: null,
   loading: true,
   ownerLogin: async () => ({ ok: false }),
   ownerLogout: async () => {},
   userLogout: () => {},
+  updateProfile: async () => {},
 });
 
 const OWNER_KEY = 'nobita_owner_id';
@@ -37,6 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
   const [telegramId, setTelegramId] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   // Har 3 second mein status check karo (sab browsers pe live update)
   useEffect(() => {
@@ -101,15 +109,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTelegramId(getTelegramId()); // WebApp ID rakhna hai agar available ho
   };
 
+  // Load profile from DB whenever telegramId changes
+  useEffect(() => {
+    if (!telegramId) return;
+    fetch(`${BASE}/api/user/${telegramId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          setProfileName(data.firstName ?? null);
+          setProfilePhoto(data.photoUrl ?? null);
+        }
+      })
+      .catch(() => {});
+  }, [telegramId]);
+
+  // Update name + photo in DB and local state
+  const updateProfile = async (name: string, photo: string | null): Promise<void> => {
+    if (!telegramId) return;
+    const res = await fetch(`${BASE}/api/user/${telegramId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName: name || null, photoUrl: photo }),
+    });
+    if (res.ok) {
+      setProfileName(name || null);
+      setProfilePhoto(photo);
+    }
+  };
+
   // Regular user logout — sirf local state clear, app band nahi hogi
   const userLogout = () => {
     localStorage.removeItem(OWNER_KEY);
     setIsOwner(false);
+    setProfileName(null);
+    setProfilePhoto(null);
     setTelegramId(getTelegramId());
   };
 
   return (
-    <AuthContext.Provider value={{ unlocked, isOwner, telegramId, loading, ownerLogin, ownerLogout, userLogout }}>
+    <AuthContext.Provider value={{
+      unlocked, isOwner, telegramId,
+      profileName, profilePhoto,
+      loading, ownerLogin, ownerLogout, userLogout, updateProfile,
+    }}>
       {children}
     </AuthContext.Provider>
   );
