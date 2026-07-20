@@ -6,7 +6,6 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const APP_URL = process.env.APP_URL || "https://c130c74f-2767-4fac-bc8a-c9474ed3a71b-00-7qvorv6tsq7d.pike.replit.dev";
 
-// ─── Telegram API helper ───────────────────────────────────────────────────
 function telegramPost(method: string, payload: object): Promise<any> {
   if (!BOT_TOKEN) return Promise.resolve(null);
   const body = JSON.stringify(payload);
@@ -32,12 +31,7 @@ function sendMessage(chatId: number, text: string, replyMarkup?: object) {
   return telegramPost("sendMessage", payload);
 }
 
-function sendChatAction(chatId: number, action = "typing") {
-  return telegramPost("sendChatAction", { chat_id: chatId, action });
-}
-
-// ─── YouTube search ────────────────────────────────────────────────────────
-async function searchYouTube(query: string): Promise<Array<{ title: string; videoId: string; channel: string }>> {
+async function searchYouTube(query: string): Promise<Array<{ title: string; videoId: string }>> {
   if (!YOUTUBE_API_KEY) return [];
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&safeSearch=strict&maxResults=5&key=${YOUTUBE_API_KEY}`;
   const res = await fetch(url);
@@ -46,41 +40,36 @@ async function searchYouTube(query: string): Promise<Array<{ title: string; vide
   return (data.items ?? []).map((v: any) => ({
     title: v.snippet.title,
     videoId: v.id.videoId,
-    channel: v.snippet.channelTitle,
   }));
 }
 
-// ─── Webhook handler ───────────────────────────────────────────────────────
+// POST /api/bot/webhook
 router.post("/bot/webhook", async (req, res) => {
-  res.sendStatus(200); // always 200 immediately
-
+  res.sendStatus(200);
   try {
-    const update = req.body;
-    const message = update?.message;
+    const message = req.body?.message;
     if (!message) return;
 
     const chatId: number = message.chat.id;
     const text: string = (message.text || "").trim();
 
-    // /start — show Open App green button
+    // /start — simple welcome, no app link
     if (text === "/start" || text.startsWith("/start ")) {
-      await sendMessage(
-        chatId,
-        `🎵 *NOBITA MUSIC*\n\nKoi bhi song ka naam likho — main turant YouTube se dhoondh ke de dunga! 🎧\n\nYa seedha app kholo 👇`,
-        {
-          inline_keyboard: [[
-            { text: "🟢 NOBITA MUSIC Kholo", web_app: { url: APP_URL } }
-          ]]
-        }
-      );
+      await sendMessage(chatId, `🎵 *NOBITA MUSIC* mein aapka swagat hai!\n\nKoi bhi song ka naam likho, main YouTube se dhoondh dunga.\n\nApp kholne ke liye: /appmusucnobita`);
       return;
     }
 
-    // Ignore other commands
+    // /appmusucnobita — sirf yahi pe app link bhejega
+    if (text === "/appmusucnobita") {
+      await sendMessage(chatId, `🎵 *NOBITA MUSIC*\n\n${APP_URL}`);
+      return;
+    }
+
+    // Ignore all other commands
     if (text.startsWith("/")) return;
 
-    // ── Music search ──
-    await sendChatAction(chatId, "typing");
+    // Music search — plain text
+    await telegramPost("sendChatAction", { chat_id: chatId, action: "typing" });
     const results = await searchYouTube(text);
 
     if (results.length === 0) {
@@ -88,14 +77,13 @@ router.post("/bot/webhook", async (req, res) => {
       return;
     }
 
-    // Send top results as clickable buttons
     const buttons = results.map((r) => ([
       { text: `🎵 ${r.title.slice(0, 55)}`, url: `https://youtube.com/watch?v=${r.videoId}` }
     ]));
 
     await sendMessage(
       chatId,
-      `🔍 *"${text}"* ke results:\n\nSong pe click karo sunne ke liye 👇`,
+      `🔍 *"${text}"* ke results:`,
       { inline_keyboard: buttons }
     );
   } catch (e) {
@@ -103,24 +91,18 @@ router.post("/bot/webhook", async (req, res) => {
   }
 });
 
-// ─── Register webhook + set green menu button ──────────────────────────────
+// GET /api/bot/register-webhook — webhook set karo, menu button hatao
 router.get("/bot/register-webhook", async (req, res) => {
   if (!BOT_TOKEN) return res.status(400).json({ error: "TELEGRAM_BOT_TOKEN not set" });
 
   const baseUrl = (req.query.url as string) || APP_URL;
   const webhookUrl = `${baseUrl}/api/bot/webhook`;
 
-  // 1. Set webhook
-  const webhookResult = await telegramPost("setWebhook", { url: webhookUrl });
-
-  // 2. Set persistent green menu button (Web App button — appears green at bottom of chat)
-  const menuResult = await telegramPost("setChatMenuButton", {
-    menu_button: {
-      type: "web_app",
-      text: "🎵 NOBITA MUSIC",
-      web_app: { url: APP_URL }
-    }
-  });
+  const [webhookResult, menuResult] = await Promise.all([
+    telegramPost("setWebhook", { url: webhookUrl }),
+    // Default menu button hatao (no green button)
+    telegramPost("setChatMenuButton", { menu_button: { type: "default" } }),
+  ]);
 
   return res.json({ webhookUrl, webhook: webhookResult, menuButton: menuResult });
 });
