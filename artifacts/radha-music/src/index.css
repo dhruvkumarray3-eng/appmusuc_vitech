@@ -61,13 +61,13 @@
   --popover-foreground: 0 0% 100%;
   --popover-border: 240 10% 12%;
   
-  /* Electric Purple Primary */
-  --primary: 270 100% 60%;
+  /* Electric Red Primary */
+  --primary: 0 100% 55%;
   --primary-foreground: 0 0% 100%;
   
-  /* Electric Cyan Secondary */
-  --secondary: 190 100% 50%;
-  --secondary-foreground: 240 10% 4%;
+  /* Deep Red Secondary */
+  --secondary: 350 100% 50%;
+  --secondary-foreground: 0 0% 100%;
   
   --muted: 240 10% 12%;
   --muted-foreground: 240 5% 65%;
@@ -80,7 +80,7 @@
   
   --border: 240 10% 15%;
   --input: 240 10% 15%;
-  --ring: 270 100% 60%;
+  --ring: 0 100% 55%;
   
   --app-font-sans: 'Outfit', sans-serif;
   --radius: 0.75rem;

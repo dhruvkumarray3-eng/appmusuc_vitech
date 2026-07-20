@@ -35,7 +35,7 @@ export default function Login() {
           <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 text-primary glow-box">
             <Disc3 size={32} className="animate-spin-slow" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white glow-text mb-2">RADHA MUSIC</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-white glow-text mb-2">NOBITA MUSIC</h1>
           <p className="text-muted-foreground text-center">Your personalized DJ booth.</p>
         </div>
 

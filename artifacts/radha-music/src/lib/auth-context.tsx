@@ -13,7 +13,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [telegramId, setTelegramId] = useState<string | null>(() => {
-    return localStorage.getItem('radha_music_telegram_id');
+    return localStorage.getItem('nobita_music_telegram_id');
   });
 
   const { data: user } = useGetUser(telegramId || '', {
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await loginMutation.mutateAsync({
         data: { telegramId: id, firstName }
       });
-      localStorage.setItem('radha_music_telegram_id', id);
+      localStorage.setItem('nobita_music_telegram_id', id);
       setTelegramId(id);
     } catch (error) {
       console.error('Login failed', error);
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('radha_music_telegram_id');
+    localStorage.removeItem('nobita_music_telegram_id');
     setTelegramId(null);
   };
 
