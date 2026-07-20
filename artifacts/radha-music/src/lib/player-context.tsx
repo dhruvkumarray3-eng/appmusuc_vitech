@@ -18,6 +18,9 @@ interface PlayerContextType {
   addToQueue: (song: Song) => void;
   playNext: () => void;
   playPrevious: () => void;
+  isVideoOpen: boolean;
+  openVideo: () => void;
+  closeVideo: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -26,9 +29,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [queue, setQueue] = useState<Song[]>([]);
-  
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
   const { telegramId } = useAuth();
   const addHistory = useAddHistory();
+
+  const openVideo = () => { if (currentSong) setIsVideoOpen(true); };
+  const closeVideo = () => setIsVideoOpen(false);
 
   const playSong = (song: Song) => {
     setCurrentSong(song);
@@ -84,7 +91,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       queue,
       addToQueue,
       playNext,
-      playPrevious
+      playPrevious,
+      isVideoOpen,
+      openVideo,
+      closeVideo,
     }}>
       {children}
     </PlayerContext.Provider>

@@ -4,7 +4,7 @@ import { usePlayer } from "@/lib/player-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Mic, Play, Plus, Heart, ListPlus } from "lucide-react";
+import { Search, Mic, Play, Plus, Heart, ListPlus, Tv2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 
@@ -15,7 +15,7 @@ export default function Home() {
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false);
   const [activeTab, setActiveTab] = useState<"results" | "lyrics" | "queue">("results");
 
-  const { playSong, addToQueue, currentSong, queue } = usePlayer();
+  const { playSong, addToQueue, currentSong, queue, openVideo } = usePlayer();
   const { telegramId } = useAuth();
   const queryClient = useQueryClient();
 
@@ -225,6 +225,15 @@ export default function Home() {
                             title="Add to playlist"
                           >
                             <ListPlus className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            onClick={() => { playSong(song); openVideo(); }}
+                            title="Watch video (1080p)"
+                          >
+                            <Tv2 className="w-4 h-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
