@@ -18,18 +18,37 @@ export function BottomPlayer() {
     );
   };
 
-  // Sync play/pause to hidden audio iframe
+  // Sync play/pause to hidden audio iframe (only when video is NOT open)
   useEffect(() => {
     if (!currentSong) return;
+    if (isVideoOpen) return; // video iframe handles playback, audio iframe stays silent
     ytCommand(audioIframeRef, isPlaying ? "playVideo" : "pauseVideo");
-  }, [isPlaying, currentSong]);
+  }, [isPlaying, currentSong, isVideoOpen]);
 
-  // Sync volume to both iframes
+  // When video opens → silence + pause audio iframe; when video closes → resume
+  useEffect(() => {
+    if (!currentSong) return;
+    if (isVideoOpen) {
+      // Mute and pause audio iframe so only video plays
+      ytCommand(audioIframeRef, "setVolume", [0]);
+      ytCommand(audioIframeRef, "pauseVideo");
+    } else {
+      // Restore audio iframe volume and resume if playing
+      ytCommand(audioIframeRef, "setVolume", [isMuted ? 0 : volume]);
+      if (isPlaying) ytCommand(audioIframeRef, "playVideo");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVideoOpen, currentSong]);
+
+  // Sync volume to audio iframe (when video not open) or video iframe (when open)
   useEffect(() => {
     const v = isMuted ? 0 : volume;
-    ytCommand(audioIframeRef, "setVolume", [v]);
-    ytCommand(videoIframeRef, "setVolume", [v]);
-  }, [volume, isMuted]);
+    if (isVideoOpen) {
+      ytCommand(videoIframeRef, "setVolume", [v]);
+    } else {
+      ytCommand(audioIframeRef, "setVolume", [v]);
+    }
+  }, [volume, isMuted, isVideoOpen]);
 
   if (!currentSong) return null;
 
