@@ -6,6 +6,7 @@ import historyRouter from "./history";
 import favoritesRouter from "./favorites";
 import playlistRouter from "./playlist";
 import musicRouter from "./music";
+import botRouter from "./bot";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(historyRouter);
 router.use(favoritesRouter);
 router.use(playlistRouter);
 router.use(musicRouter);
+router.use(botRouter);
 
 export default router;
