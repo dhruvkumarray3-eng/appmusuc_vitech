@@ -19,7 +19,7 @@ export function Sidebar() {
     <aside className="w-64 h-[100dvh] flex flex-col bg-card/40 backdrop-blur-xl border-r border-border shrink-0 fixed md:relative z-40 hidden md:flex">
       <div className="p-6 flex items-center gap-3">
         <Disc3 className="text-primary w-8 h-8 animate-spin-slow glow-text" />
-        <h2 className="text-xl font-bold tracking-wider text-white glow-text">NOBITA</h2>
+        <h2 className="text-xl tracking-wider text-white glow-text" style={{ fontFamily: 'Audiowide, cursive' }}>NOBITA</h2>
       </div>
 
       <nav className="flex-1 px-4 space-y-2 mt-4">

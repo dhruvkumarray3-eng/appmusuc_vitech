@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Audiowide&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -49,40 +49,41 @@
 }
 
 :root, .dark {
-  /* DARK CLUB DJ BOOTH VIBE - Default is Dark Mode */
-  --background: 240 10% 4%; /* very dark bluish black */
+  /* DARK CLUB DJ BOOTH VIBE - Red Dimension */
+  --background: 0 10% 4%; /* very dark reddish black */
   --foreground: 0 0% 100%;
   
-  --card: 240 10% 6%;
+  --card: 0 10% 6%;
   --card-foreground: 0 0% 100%;
-  --card-border: 240 10% 12%;
+  --card-border: 0 10% 12%;
   
-  --popover: 240 10% 6%;
+  --popover: 0 10% 6%;
   --popover-foreground: 0 0% 100%;
-  --popover-border: 240 10% 12%;
+  --popover-border: 0 10% 12%;
   
   /* Electric Red Primary */
   --primary: 0 100% 55%;
   --primary-foreground: 0 0% 100%;
   
-  /* Deep Red Secondary */
+  /* Deep Crimson Secondary */
   --secondary: 350 100% 50%;
   --secondary-foreground: 0 0% 100%;
   
-  --muted: 240 10% 12%;
-  --muted-foreground: 240 5% 65%;
+  --muted: 0 10% 12%;
+  --muted-foreground: 0 5% 65%;
   
-  --accent: 320 100% 60%;
+  --accent: 15 100% 60%;
   --accent-foreground: 0 0% 100%;
   
-  --destructive: 0 100% 60%;
+  --destructive: 0 80% 45%;
   --destructive-foreground: 0 0% 100%;
   
-  --border: 240 10% 15%;
-  --input: 240 10% 15%;
+  --border: 0 10% 15%;
+  --input: 0 10% 15%;
   --ring: 0 100% 55%;
   
   --app-font-sans: 'Outfit', sans-serif;
+  --app-font-stylish: 'Audiowide', cursive;
   --radius: 0.75rem;
 }
 

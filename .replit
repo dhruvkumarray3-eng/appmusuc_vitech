@@ -18,3 +18,8 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+YOUTUBE_API_KEY = "AIzaSyAJwGWTd-xoRRZLaA-fL9naZJ7d7Ufqebg"
