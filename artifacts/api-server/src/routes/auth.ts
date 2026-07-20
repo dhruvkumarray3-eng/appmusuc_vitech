@@ -6,6 +6,14 @@ import { TelegramLoginBody } from "@workspace/api-zod";
 
 const router = Router();
 
+// POST /api/auth/owner-check — returns { allowed: true/false }
+router.post("/auth/owner-check", (req, res) => {
+  const ownerId = process.env.OWNER_TELEGRAM_ID;
+  const { telegramId } = req.body ?? {};
+  if (!ownerId) return res.status(500).json({ error: "Owner not configured" });
+  return res.json({ allowed: String(telegramId) === String(ownerId) });
+});
+
 // POST /api/auth/telegram
 router.post("/auth/telegram", async (req, res) => {
   try {
