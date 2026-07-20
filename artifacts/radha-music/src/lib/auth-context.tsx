@@ -7,6 +7,7 @@ interface AuthContextType {
   loading: boolean;
   ownerLogin: (telegramId: string, password: string) => Promise<{ ok: boolean; reason?: string }>;
   ownerLogout: (telegramId: string) => Promise<void>;
+  userLogout: () => void; // regular user — clears local state only
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   ownerLogin: async () => ({ ok: false }),
   ownerLogout: async () => {},
+  userLogout: () => {},
 });
 
 const OWNER_KEY = 'nobita_owner_id';
@@ -99,8 +101,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTelegramId(getTelegramId()); // WebApp ID rakhna hai agar available ho
   };
 
+  // Regular user logout — sirf local state clear, app band nahi hogi
+  const userLogout = () => {
+    localStorage.removeItem(OWNER_KEY);
+    setIsOwner(false);
+    setTelegramId(getTelegramId());
+  };
+
   return (
-    <AuthContext.Provider value={{ unlocked, isOwner, telegramId, loading, ownerLogin, ownerLogout }}>
+    <AuthContext.Provider value={{ unlocked, isOwner, telegramId, loading, ownerLogin, ownerLogout, userLogout }}>
       {children}
     </AuthContext.Provider>
   );

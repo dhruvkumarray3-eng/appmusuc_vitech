@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { usersTable, historyTable } from "@workspace/db";
+import { eq, gte, sql, desc } from "drizzle-orm";
 import { TelegramLoginBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -44,6 +44,48 @@ router.post("/auth/owner-logout", (req, res) => {
     appUnlocked = false;
   }
   return res.json({ unlocked: appUnlocked });
+});
+
+// GET /api/auth/stats — owner panel ke liye live stats
+router.get("/auth/stats", async (_req, res) => {
+  try {
+    const [totalResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usersTable);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [activeTodayResult] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usersTable)
+      .where(gte(usersTable.lastLogin, today));
+
+    const [listenersResult] = await db
+      .select({ count: sql<number>`count(distinct ${historyTable.telegramId})::int` })
+      .from(historyTable);
+
+    const recentUsers = await db
+      .select({
+        telegramId: usersTable.telegramId,
+        firstName: usersTable.firstName,
+        username: usersTable.username,
+        lastLogin: usersTable.lastLogin,
+      })
+      .from(usersTable)
+      .orderBy(desc(usersTable.lastLogin))
+      .limit(20);
+
+    return res.json({
+      unlocked: appUnlocked,
+      totalRegistered: totalResult?.count ?? 0,
+      activeToday: activeTodayResult?.count ?? 0,
+      totalListeners: listenersResult?.count ?? 0,
+      recentUsers,
+    });
+  } catch (e) {
+    req.log?.error(e);
+    return res.status(500).json({ error: "DB error" });
+  }
 });
 
 // POST /api/auth/telegram (existing — user record save karna)

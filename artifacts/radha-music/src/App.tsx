@@ -13,6 +13,8 @@ import Home from '@/pages/Home';
 import History from '@/pages/History';
 import Favorites from '@/pages/Favorites';
 import Playlist from '@/pages/Playlist';
+import OwnerPanel from '@/pages/OwnerPanel';
+import UserProfile from '@/pages/UserProfile';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient({
@@ -51,6 +53,8 @@ function Router() {
         <Route path="/history" component={History} />
         <Route path="/favorites" component={Favorites} />
         <Route path="/playlist" component={Playlist} />
+        <Route path="/panel" component={OwnerPanel} />
+        <Route path="/profile" component={UserProfile} />
         <Route component={NotFound} />
       </Switch>
     </AppShell>

@@ -1,18 +1,18 @@
-import { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
-import { Home, History, Heart, ListMusic, LogOut, Disc3 } from "lucide-react";
+import { Home, History, Heart, ListMusic, Disc3, Shield, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const [location] = useLocation();
-  const { logout, user } = useAuth();
+  const { isOwner, telegramId } = useAuth();
 
   const links = [
     { href: "/", label: "Player", icon: Home },
     { href: "/history", label: "History", icon: History },
     { href: "/favorites", label: "Favorites", icon: Heart },
     { href: "/playlist", label: "Playlist", icon: ListMusic },
+    ...(isOwner ? [{ href: "/panel", label: "Owner Panel", icon: Shield }] : []),
   ];
 
   return (
@@ -27,16 +27,15 @@ export function Sidebar() {
           const Icon = link.icon;
           const isActive = location === link.href;
           return (
-            <Link 
-              key={link.href} 
+            <Link
+              key={link.href}
               href={link.href}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group",
-                isActive 
-                  ? "bg-primary/20 text-primary glow-box font-medium" 
+                isActive
+                  ? "bg-primary/20 text-primary glow-box font-medium"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
-              data-testid={`link-nav-${link.label.toLowerCase()}`}
             >
               <Icon className={cn("w-5 h-5", isActive ? "text-primary" : "group-hover:text-foreground transition-colors")} />
               <span>{link.label}</span>
@@ -45,28 +44,29 @@ export function Sidebar() {
         })}
       </nav>
 
+      {/* User info footer — click to go to profile */}
       <div className="p-4 mt-auto">
-        <div className="bg-background/50 rounded-xl p-4 border border-border flex items-center justify-between">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center shrink-0">
-              <span className="text-sm font-bold text-primary">
-                {user?.firstName?.[0] || 'U'}
-              </span>
+        <Link href="/profile">
+          <div className="bg-background/50 rounded-xl p-4 border border-border flex items-center justify-between hover:border-primary/40 transition-colors cursor-pointer group">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center shrink-0">
+                {isOwner
+                  ? <Shield className="w-4 h-4 text-yellow-400" />
+                  : <User className="w-4 h-4 text-primary" />
+                }
+              </div>
+              <div className="truncate">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {isOwner ? "Owner" : "User"}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {telegramId ? `#${telegramId}` : "Guest"}
+                </p>
+              </div>
             </div>
-            <div className="truncate">
-              <p className="text-sm font-medium text-foreground truncate">{user?.firstName || 'User'}</p>
-              <p className="text-xs text-muted-foreground truncate">#{user?.telegramId}</p>
-            </div>
+            <User className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
           </div>
-          <button 
-            onClick={logout}
-            className="p-2 hover:bg-destructive/20 text-muted-foreground hover:text-destructive rounded-lg transition-colors shrink-0"
-            title="Logout"
-            data-testid="button-logout"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+        </Link>
       </div>
     </aside>
   );
@@ -75,12 +75,17 @@ export function Sidebar() {
 // Mobile Bottom Nav
 export function BottomNav() {
   const [location] = useLocation();
+  const { isOwner } = useAuth();
 
   const links = [
     { href: "/", label: "Play", icon: Home },
     { href: "/history", label: "History", icon: History },
     { href: "/favorites", label: "Favs", icon: Heart },
     { href: "/playlist", label: "List", icon: ListMusic },
+    ...(isOwner
+      ? [{ href: "/panel", label: "Panel", icon: Shield }]
+      : [{ href: "/profile", label: "Me", icon: User }]
+    ),
   ];
 
   return (
@@ -89,14 +94,13 @@ export function BottomNav() {
         const Icon = link.icon;
         const isActive = location === link.href;
         return (
-          <Link 
-            key={link.href} 
+          <Link
+            key={link.href}
             href={link.href}
             className={cn(
-              "flex flex-col items-center justify-center w-16 h-full gap-1 transition-colors",
+              "flex flex-col items-center justify-center w-14 h-full gap-1 transition-colors",
               isActive ? "text-primary" : "text-muted-foreground"
             )}
-            data-testid={`link-bottom-nav-${link.label.toLowerCase()}`}
           >
             <Icon className={cn("w-5 h-5", isActive && "glow-text")} />
             <span className="text-[10px] font-medium">{link.label}</span>
