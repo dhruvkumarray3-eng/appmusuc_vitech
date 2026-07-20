@@ -24,8 +24,8 @@ const queryClient = new QueryClient({
 });
 
 function AppShell({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Login />;
+  const { unlocked, loading } = useAuth();
+  if (loading || !unlocked) return <Login />;
   return (
     <PlayerProvider>
       <div className="flex h-[100dvh] bg-background text-foreground overflow-hidden">
