@@ -1,5 +1,5 @@
 import { Route, Switch, Router as WouterRouter } from 'wouter';
-import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { AuthProvider } from '@/lib/auth-context';
 import { PlayerProvider } from '@/lib/player-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -8,7 +8,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Sidebar, BottomNav } from '@/components/Sidebar';
 import { BottomPlayer } from '@/components/BottomPlayer';
 
-import Login from '@/pages/Login';
 import Home from '@/pages/Home';
 import History from '@/pages/History';
 import Favorites from '@/pages/Favorites';
@@ -24,12 +23,6 @@ const queryClient = new QueryClient({
 });
 
 function AppShell({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
   return (
     <PlayerProvider>
       <div className="flex h-[100dvh] bg-background text-foreground overflow-hidden">
