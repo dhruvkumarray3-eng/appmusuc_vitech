@@ -23,6 +23,7 @@ timeoutMs = 20000
 
 [userenv.shared]
 YOUTUBE_API_KEY = "AIzaSyAJwGWTd-xoRRZLaA-fL9naZJ7d7Ufqebg"
+OWNER_TELEGRAM_ID = "8245258112"
 
 [nix]
 channel = "stable-25_05"
