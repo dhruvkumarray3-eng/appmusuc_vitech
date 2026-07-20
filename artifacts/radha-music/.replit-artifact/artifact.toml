@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "RADHA MUSIC"
+version = "1.0.0"
+id = "artifacts/radha-music"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19998
+
+[services.development]
+run = "pnpm --filter @workspace/radha-music run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/radha-music", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/radha-music/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19998"
+BASE_PATH = "/"

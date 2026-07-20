@@ -3,13 +3,26 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: RADHA MUSIC API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: user
+    description: User management
+  - name: history
+    description: Listening history
+  - name: favorites
+    description: Favorite songs
+  - name: playlist
+    description: Playlist management
+  - name: music
+    description: Music search
+
 paths:
   /healthz:
     get:
@@ -24,6 +37,204 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/telegram:
+    post:
+      operationId: telegramLogin
+      tags: [auth]
+      summary: Login or register via Telegram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramLoginInput"
+      responses:
+        "200":
+          description: User logged in or registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Bad request
+
+  /user/{telegramId}:
+    get:
+      operationId: getUser
+      tags: [user]
+      summary: Get user profile
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+
+  /history:
+    post:
+      operationId: addHistory
+      tags: [history]
+      summary: Save a song to history
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HistoryInput"
+      responses:
+        "200":
+          description: History updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+
+  /history/{telegramId}:
+    get:
+      operationId: getHistory
+      tags: [history]
+      summary: Get listening history
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Listening history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+
+  /favorites/add:
+    post:
+      operationId: addFavorite
+      tags: [favorites]
+      summary: Add a song to favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FavoriteInput"
+      responses:
+        "200":
+          description: Favorite added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoritesResponse"
+
+  /favorites/remove:
+    post:
+      operationId: removeFavorite
+      tags: [favorites]
+      summary: Remove a song from favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FavoriteInput"
+      responses:
+        "200":
+          description: Favorite removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoritesResponse"
+
+  /favorites/{telegramId}:
+    get:
+      operationId: getFavorites
+      tags: [favorites]
+      summary: Get user favorites
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Favorites list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoritesResponse"
+
+  /playlist/add:
+    post:
+      operationId: addToPlaylist
+      tags: [playlist]
+      summary: Add a song to playlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaylistInput"
+      responses:
+        "200":
+          description: Playlist updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaylistResponse"
+
+  /playlist/{telegramId}:
+    get:
+      operationId: getPlaylist
+      tags: [playlist]
+      summary: Get user playlist
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User playlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaylistResponse"
+
+  /music/search:
+    get:
+      operationId: searchMusic
+      tags: [music]
+      summary: Search for songs via YouTube
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+        "400":
+          description: Missing query
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +245,141 @@ components:
       required:
         - status
 
+    Song:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        thumbnail:
+          type: string
+      required:
+        - id
+        - title
+
+    TelegramLoginInput:
+      type: object
+      properties:
+        telegramId:
+          type: string
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        username:
+          type: ["string", "null"]
+        photoUrl:
+          type: ["string", "null"]
+      required:
+        - telegramId
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        telegramId:
+          type: string
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        username:
+          type: ["string", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        isNewUser:
+          type: boolean
+      required:
+        - id
+        - telegramId
+
+    HistoryInput:
+      type: object
+      properties:
+        telegramId:
+          type: string
+        song:
+          $ref: "#/components/schemas/Song"
+      required:
+        - telegramId
+        - song
+
+    HistoryResponse:
+      type: object
+      properties:
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/Song"
+      required:
+        - history
+
+    FavoriteInput:
+      type: object
+      properties:
+        telegramId:
+          type: string
+        songId:
+          type: string
+      required:
+        - telegramId
+        - songId
+
+    FavoritesResponse:
+      type: object
+      properties:
+        favorites:
+          type: array
+          items:
+            type: string
+      required:
+        - favorites
+
+    PlaylistInput:
+      type: object
+      properties:
+        telegramId:
+          type: string
+        song:
+          $ref: "#/components/schemas/Song"
+      required:
+        - telegramId
+        - song
+
+    PlaylistResponse:
+      type: object
+      properties:
+        playlist:
+          type: array
+          items:
+            $ref: "#/components/schemas/Song"
+      required:
+        - playlist
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        thumbnail:
+          type: string
+        channelTitle:
+          type: string
+      required:
+        - id
+        - title
+        - thumbnail
+
+    SearchResults:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+      required:
+        - items
