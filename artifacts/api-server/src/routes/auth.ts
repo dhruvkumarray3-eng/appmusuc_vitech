@@ -14,14 +14,24 @@ router.get("/auth/status", (_req, res) => {
   res.json({ unlocked: appUnlocked });
 });
 
-// POST /api/auth/owner-login — owner apna ID daale, app sabke liye khul jaaye
+// POST /api/auth/owner-login — owner apna ID + password daale, app sabke liye khul jaaye
 router.post("/auth/owner-login", (req, res) => {
   const ownerId = process.env.OWNER_TELEGRAM_ID;
-  const { telegramId } = req.body ?? {};
+  const ownerPassword = process.env.OWNER_PASSWORD;
+  const { telegramId, password } = req.body ?? {};
+
   if (!ownerId) return res.status(500).json({ error: "OWNER_TELEGRAM_ID not configured" });
+  if (!ownerPassword) return res.status(500).json({ error: "OWNER_PASSWORD not configured" });
+
+  // ID check
   if (String(telegramId) !== String(ownerId)) {
-    return res.json({ allowed: false, unlocked: appUnlocked });
+    return res.json({ allowed: false, reason: "id", unlocked: appUnlocked });
   }
+  // Password check
+  if (String(password) !== String(ownerPassword)) {
+    return res.json({ allowed: false, reason: "password", unlocked: appUnlocked });
+  }
+
   appUnlocked = true;
   return res.json({ allowed: true, unlocked: true });
 });

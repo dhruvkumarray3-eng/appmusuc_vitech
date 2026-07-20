@@ -4,7 +4,7 @@ interface AuthContextType {
   unlocked: boolean;       // kya app sabke liye khuli hai?
   isOwner: boolean;        // kya yeh owner ka browser hai?
   loading: boolean;
-  ownerLogin: (telegramId: string) => Promise<boolean>;
+  ownerLogin: (telegramId: string, password: string) => Promise<{ ok: boolean; reason?: string }>;
   ownerLogout: (telegramId: string) => Promise<void>;
 }
 
@@ -12,7 +12,7 @@ const AuthContext = createContext<AuthContextType>({
   unlocked: false,
   isOwner: false,
   loading: true,
-  ownerLogin: async () => false,
+  ownerLogin: async () => ({ ok: false }),
   ownerLogout: async () => {},
 });
 
@@ -50,12 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsOwner(!!localStorage.getItem(OWNER_KEY));
   }, []);
 
-  const ownerLogin = async (telegramId: string): Promise<boolean> => {
+  const ownerLogin = async (telegramId: string, password: string): Promise<{ ok: boolean; reason?: string }> => {
     try {
       const res = await fetch(`${BASE}/api/auth/owner-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId }),
+        body: JSON.stringify({ telegramId, password }),
       });
       const data = await res.json();
       if (data.allowed) {
@@ -63,9 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsOwner(true);
         setUnlocked(true);
       }
-      return data.allowed ?? false;
+      return { ok: data.allowed ?? false, reason: data.reason };
     } catch {
-      return false;
+      return { ok: false };
     }
   };
 
