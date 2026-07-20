@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-20", "web", "bash"]
 
 [deployment]
 router = "application"
@@ -23,3 +23,6 @@ timeoutMs = 20000
 
 [userenv.shared]
 YOUTUBE_API_KEY = "AIzaSyAJwGWTd-xoRRZLaA-fL9naZJ7d7Ufqebg"
+
+[nix]
+channel = "stable-25_05"
