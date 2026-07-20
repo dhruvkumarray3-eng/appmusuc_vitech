@@ -32,7 +32,8 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
+    // Only show the error overlay in dev, not in Telegram Mini App or production
+    ...(process.env.NODE_ENV !== 'production' ? [runtimeErrorOverlay()] : []),
     ...(process.env.NODE_ENV !== 'production' &&
     process.env.REPL_ID !== undefined
       ? [
