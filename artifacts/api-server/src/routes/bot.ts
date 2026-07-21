@@ -24,26 +24,20 @@ function telegramPost(method: string, payload: object): Promise<any> {
   });
 }
 
-// POST /api/bot/webhook
+// POST /api/bot/webhook — sirf /appmusucnobita pe react karo, baaki sab ignore
 router.post("/bot/webhook", async (req, res) => {
   res.sendStatus(200);
   try {
-    const update = req.body;
-    const message = update?.message;
+    const message = req.body?.message;
     if (!message) return;
 
     const chatId: number = message.chat.id;
     const text: string = (message.text || "").trim();
-    const user = message.from;
-    const firstName = user?.first_name ?? "Dost";
 
-    if (text === "/start" || text === "/appmusucnobita") {
+    if (text === "/appmusucnobita") {
       await telegramPost("sendMessage", {
         chat_id: chatId,
-        text:
-          `🎵 *Jai ho ${firstName}!*\n\n` +
-          `NOBITA MUSIC mein aapka swagat hai 🎶\n` +
-          `Neeche button dabao aur music ka maze lo 👇`,
+        text: "🎵 *NOBITA MUSIC* — App kholne ke liye neeche button dabao 👇",
         parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [[
@@ -52,13 +46,13 @@ router.post("/bot/webhook", async (req, res) => {
         }
       });
     }
-    // Baaki sab ignore
+    // Baaki sab commands aur messages — bilkul ignore
   } catch (e) {
     req.log?.error(e);
   }
 });
 
-// GET /api/bot/register-webhook — fresh setup: delete old, register new
+// GET /api/bot/register-webhook — webhook + left-side Mini App button set karo
 router.get("/bot/register-webhook", async (req, res) => {
   if (!BOT_TOKEN) return res.status(400).json({ error: "TELEGRAM_BOT_TOKEN not set" });
   if (!APP_URL) return res.status(400).json({ error: "APP_URL not set" });
@@ -66,33 +60,32 @@ router.get("/bot/register-webhook", async (req, res) => {
   const baseUrl = (req.query.url as string) || APP_URL;
   const webhookUrl = `${baseUrl}/api/bot/webhook`;
 
-  // Step 1: Purana webhook aur menu button hatao
-  await telegramPost("deleteWebhook", { drop_pending_updates: true });
-  await telegramPost("setChatMenuButton", { menu_button: { type: "default" } });
-
-  // Step 2: Naya webhook lagao
-  const [webhookResult, commandsResult] = await Promise.all([
+  const [webhookResult, menuResult, commandsResult] = await Promise.all([
+    // Webhook register karo
     telegramPost("setWebhook", {
       url: webhookUrl,
       allowed_updates: ["message", "callback_query"],
     }),
+    // Left side ka Mini App button — jaisa pehle tha
+    telegramPost("setChatMenuButton", {
+      menu_button: {
+        type: "web_app",
+        text: "🎵 NOBITA MUSIC",
+        web_app: { url: APP_URL },
+      },
+    }),
+    // Sirf ek command — /appmusucnobita (start register nahi)
     telegramPost("setMyCommands", {
       commands: [
-        { command: "start", description: "🎵 NOBITA MUSIC shuru karo" },
         { command: "appmusucnobita", description: "🎵 NOBITA MUSIC app kholo" },
       ],
     }),
   ]);
 
-  return res.json({
-    webhookUrl,
-    webhook: webhookResult,
-    commands: commandsResult,
-    menuButton: "reset to default (keyboard button removed)",
-  });
+  return res.json({ webhookUrl, webhook: webhookResult, menuButton: menuResult, commands: commandsResult });
 });
 
-// GET /api/bot/reset — emergency: sab kuch reset karo
+// GET /api/bot/reset — emergency reset
 router.get("/bot/reset", async (_req, res) => {
   if (!BOT_TOKEN) return res.status(400).json({ error: "No token" });
   const [w, m, c] = await Promise.all([
