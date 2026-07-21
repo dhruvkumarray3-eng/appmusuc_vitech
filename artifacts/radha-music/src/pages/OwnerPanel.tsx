@@ -275,8 +275,8 @@ function PanelContent() {
 
 // ── Route component ──────────────────────────────────────────────────────────
 export default function OwnerPanel() {
-  const { isOwner } = useAuth();
-  const [verified, setVerified] = useState(isOwner);
+  // Always start unverified — localStorage manipulation se bypass impossible
+  const [verified, setVerified] = useState(false);
 
   // If owner was already logged in from this session, skip verify gate
   if (!verified) {

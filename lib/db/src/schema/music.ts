@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -53,3 +53,10 @@ export const playlistTable = pgTable("playlist", {
 export const insertPlaylistSchema = createInsertSchema(playlistTable).omit({ id: true, addedAt: true });
 export type InsertPlaylist = z.infer<typeof insertPlaylistSchema>;
 export type PlaylistItem = typeof playlistTable.$inferSelect;
+
+// App-wide settings — single row, key = "app"
+export const settingsTable = pgTable("settings", {
+  key: text("key").primaryKey(),
+  appUnlocked: boolean("app_unlocked").notNull().default(false),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

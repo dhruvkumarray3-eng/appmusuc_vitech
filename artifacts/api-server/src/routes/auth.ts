@@ -1,13 +1,47 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, historyTable } from "@workspace/db";
+import { usersTable, historyTable, settingsTable } from "@workspace/db";
 import { eq, gte, sql, desc } from "drizzle-orm";
 import { TelegramLoginBody } from "@workspace/api-zod";
 
 const router = Router();
+const SETTINGS_KEY = "app";
 
-// ── Global master switch ── owner login = khula sabke liye, logout = band
+// ── DB-backed master switch ──────────────────────────────────────────────────
+// In-memory cache (fast reads), DB for persistence across restarts
 let appUnlocked = false;
+
+// Server start pe DB se state load karo
+async function loadUnlockedState() {
+  try {
+    const rows = await db
+      .select()
+      .from(settingsTable)
+      .where(eq(settingsTable.key, SETTINGS_KEY))
+      .limit(1);
+    if (rows.length > 0) {
+      appUnlocked = rows[0].appUnlocked;
+    }
+  } catch {
+    // DB ready nahi — default false rehega
+  }
+}
+loadUnlockedState();
+
+async function persistUnlocked(value: boolean) {
+  appUnlocked = value;
+  try {
+    await db
+      .insert(settingsTable)
+      .values({ key: SETTINGS_KEY, appUnlocked: value, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: settingsTable.key,
+        set: { appUnlocked: value, updatedAt: new Date() },
+      });
+  } catch {
+    // ignore — in-memory state already updated
+  }
+}
 
 // GET /api/auth/status — sabke liye check karo app khuli hai ya nahi
 router.get("/auth/status", (_req, res) => {
@@ -15,7 +49,7 @@ router.get("/auth/status", (_req, res) => {
 });
 
 // POST /api/auth/owner-login — owner apna ID + password daale, app sabke liye khul jaaye
-router.post("/auth/owner-login", (req, res) => {
+router.post("/auth/owner-login", async (req, res) => {
   const ownerId = process.env.OWNER_TELEGRAM_ID;
   const ownerPassword = process.env.OWNER_PASSWORD;
   const { telegramId, password } = req.body ?? {};
@@ -23,25 +57,23 @@ router.post("/auth/owner-login", (req, res) => {
   if (!ownerId) return res.status(500).json({ error: "OWNER_TELEGRAM_ID not configured" });
   if (!ownerPassword) return res.status(500).json({ error: "OWNER_PASSWORD not configured" });
 
-  // ID check
   if (String(telegramId) !== String(ownerId)) {
     return res.json({ allowed: false, reason: "id", unlocked: appUnlocked });
   }
-  // Password check
   if (String(password) !== String(ownerPassword)) {
     return res.json({ allowed: false, reason: "password", unlocked: appUnlocked });
   }
 
-  appUnlocked = true;
+  await persistUnlocked(true);
   return res.json({ allowed: true, unlocked: true });
 });
 
 // POST /api/auth/owner-logout — owner app band kare sabke liye
-router.post("/auth/owner-logout", (req, res) => {
+router.post("/auth/owner-logout", async (req, res) => {
   const ownerId = process.env.OWNER_TELEGRAM_ID;
   const { telegramId } = req.body ?? {};
   if (String(telegramId) === String(ownerId)) {
-    appUnlocked = false;
+    await persistUnlocked(false);
   }
   return res.json({ unlocked: appUnlocked });
 });
@@ -88,7 +120,7 @@ router.get("/auth/stats", async (_req, res) => {
   }
 });
 
-// POST /api/auth/telegram (existing — user record save karna)
+// POST /api/auth/telegram — user record save karna
 router.post("/auth/telegram", async (req, res) => {
   try {
     const parsed = TelegramLoginBody.safeParse(req.body);
