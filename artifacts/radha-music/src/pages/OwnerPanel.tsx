@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocation } from "wouter";
 import {
   Shield, Users, Activity, Radio, Lock, Unlock,
-  LogOut, RefreshCw, Clock, Eye, EyeOff, KeyRound
+  LogOut, RefreshCw, Clock, Eye, EyeOff, KeyRound,
+  Camera, Check, X, Pencil, AtSign
 } from "lucide-react";
 
 interface Stats {
@@ -15,6 +16,28 @@ interface Stats {
 }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// Compress image to max 200×200 JPEG and return as base64 data URL
+async function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 200;
+      const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
 
 // ── In-panel owner verification ──────────────────────────────────────────────
 function OwnerVerifyGate({ onVerified }: { onVerified: () => void }) {
@@ -42,7 +65,6 @@ function OwnerVerifyGate({ onVerified }: { onVerified: () => void }) {
   return (
     <div className="h-full flex items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-6">
-        {/* Header */}
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center">
             <KeyRound className="w-6 h-6 text-yellow-400" />
@@ -53,7 +75,6 @@ function OwnerVerifyGate({ onVerified }: { onVerified: () => void }) {
           <p className="text-sm text-muted-foreground">Owner ID aur password daalo to andar aao</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Owner Telegram ID</label>
@@ -102,6 +123,148 @@ function OwnerVerifyGate({ onVerified }: { onVerified: () => void }) {
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+// ── Profile edit section for owner ──────────────────────────────────────────
+function OwnerProfileEdit() {
+  const { telegramId, profileName, profileUsername, profilePhoto, updateProfile } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [draftUsername, setDraftUsername] = useState("");
+  const [draftPhoto, setDraftPhoto] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = () => {
+    setDraftName(profileName ?? "");
+    setDraftUsername(profileUsername ?? "");
+    setDraftPhoto(profilePhoto ?? null);
+    setSaveMsg("");
+    setEditing(true);
+  };
+
+  const cancelEdit = () => { setEditing(false); setDraftPhoto(null); setSaveMsg(""); };
+
+  const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setDraftPhoto(await compressImage(file));
+    } catch {
+      setSaveMsg("❌ Photo load nahi hui");
+    }
+  };
+
+  const saveProfile = async () => {
+    if (!telegramId) return;
+    setSaving(true);
+    setSaveMsg("");
+    try {
+      await updateProfile(draftName.trim(), draftUsername.trim(), draftPhoto);
+      setSaveMsg("✅ Profile save ho gayi!");
+      setTimeout(() => { setEditing(false); setSaveMsg(""); }, 1200);
+    } catch {
+      setSaveMsg("❌ Save nahi hua, dobara try karo");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const displayName = profileName || "Owner";
+  const avatarLetter = (displayName[0] ?? "O").toUpperCase();
+  const currentPhoto = editing ? draftPhoto : profilePhoto;
+
+  return (
+    <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-yellow-400">Owner Profile</p>
+        {!editing && (
+          <button
+            onClick={startEdit}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25 text-xs font-medium transition-colors"
+          >
+            <Pencil className="w-3 h-3" /> Edit
+          </button>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="relative shrink-0">
+          <div className="w-14 h-14 rounded-full overflow-hidden bg-yellow-500/20 flex items-center justify-center">
+            {currentPhoto
+              ? <img src={currentPhoto} alt="avatar" className="w-full h-full object-cover" />
+              : <span className="text-xl font-bold text-yellow-400">{avatarLetter}</span>
+            }
+          </div>
+          {editing && (
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center shadow-lg"
+            >
+              <Camera className="w-3 h-3 text-black" />
+            </button>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+        </div>
+
+        {!editing && (
+          <div className="min-w-0">
+            <p className="font-bold text-white truncate">{displayName}</p>
+            {profileUsername && <p className="text-xs text-yellow-400/70">@{profileUsername}</p>}
+            <p className="text-xs text-muted-foreground mt-0.5">ID: {telegramId}</p>
+          </div>
+        )}
+      </div>
+
+      {editing && (
+        <div className="space-y-2 pt-1">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Naam</label>
+            <input
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              placeholder="Apna naam daalo"
+              maxLength={40}
+              className="w-full px-3 py-2 rounded-lg bg-background/60 border border-yellow-500/30 text-white text-sm placeholder:text-muted-foreground focus:outline-none focus:border-yellow-500 transition-colors"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Username</label>
+            <div className="relative">
+              <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                value={draftUsername}
+                onChange={(e) => setDraftUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+                placeholder="username"
+                maxLength={32}
+                className="w-full pl-8 pr-3 py-2 rounded-lg bg-background/60 border border-yellow-500/30 text-white text-sm placeholder:text-muted-foreground focus:outline-none focus:border-yellow-500 transition-colors"
+              />
+            </div>
+          </div>
+          {saveMsg && <p className="text-xs text-center">{saveMsg}</p>}
+          <div className="flex gap-2">
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              className="flex-1 py-2 rounded-xl bg-yellow-500 text-black font-semibold text-sm flex items-center justify-center gap-1.5 hover:bg-yellow-400 transition-colors disabled:opacity-60"
+            >
+              <Check className="w-3.5 h-3.5" />
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button
+              onClick={cancelEdit}
+              disabled={saving}
+              className="flex-1 py-2 rounded-xl bg-muted text-foreground font-semibold text-sm flex items-center justify-center gap-1.5 hover:bg-muted/80 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" /> Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -173,7 +336,7 @@ function PanelContent() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Owner Panel</h1>
-            <p className="text-xs text-muted-foreground">ID: {telegramId}</p>
+            <p className="text-xs text-muted-foreground">NOBITA MUSIC</p>
           </div>
         </div>
         <button
@@ -185,6 +348,9 @@ function PanelContent() {
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
+
+      {/* Owner Profile Edit */}
+      <OwnerProfileEdit />
 
       {/* App Status Card */}
       <div className={`rounded-2xl border p-5 flex items-center justify-between transition-all ${
@@ -275,10 +441,8 @@ function PanelContent() {
 
 // ── Route component ──────────────────────────────────────────────────────────
 export default function OwnerPanel() {
-  // Always start unverified — localStorage manipulation se bypass impossible
   const [verified, setVerified] = useState(false);
 
-  // If owner was already logged in from this session, skip verify gate
   if (!verified) {
     return <OwnerVerifyGate onVerified={() => setVerified(true)} />;
   }

@@ -60,13 +60,13 @@ router.get("/bot/register-webhook", async (req, res) => {
   const baseUrl = (req.query.url as string) || APP_URL;
   const webhookUrl = `${baseUrl}/api/bot/webhook`;
 
-  const [webhookResult, menuResult, commandsResult] = await Promise.all([
+  const [webhookResult, menuResult] = await Promise.all([
     // Webhook register karo
     telegramPost("setWebhook", {
       url: webhookUrl,
       allowed_updates: ["message", "callback_query"],
     }),
-    // Left side ka Mini App button — jaisa pehle tha
+    // Left side ka Mini App button
     telegramPost("setChatMenuButton", {
       menu_button: {
         type: "web_app",
@@ -74,15 +74,10 @@ router.get("/bot/register-webhook", async (req, res) => {
         web_app: { url: APP_URL },
       },
     }),
-    // Sirf ek command — /appmusucnobita (start register nahi)
-    telegramPost("setMyCommands", {
-      commands: [
-        { command: "appmusucnobita", description: "🎵 NOBITA MUSIC app kholo" },
-      ],
-    }),
+    // Commands register NAHI karte — owner khud karega
   ]);
 
-  return res.json({ webhookUrl, webhook: webhookResult, menuButton: menuResult, commands: commandsResult });
+  return res.json({ webhookUrl, webhook: webhookResult, menuButton: menuResult });
 });
 
 // GET /api/bot/reset — emergency reset

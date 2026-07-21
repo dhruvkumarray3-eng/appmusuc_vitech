@@ -4,7 +4,7 @@ import { usePlayer } from "@/lib/player-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Mic, Play, Plus, Heart, ListPlus, Tv2 } from "lucide-react";
+import { Search, Mic, Play, Plus, Heart, ListPlus, Tv2, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 
@@ -234,6 +234,15 @@ export default function Home() {
                             title="Watch video (1080p)"
                           >
                             <Tv2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 rounded-full text-muted-foreground hover:text-green-400 hover:bg-green-400/10"
+                            onClick={() => window.open(`https://cobalt.tools/?url=${encodeURIComponent('https://youtube.com/watch?v=' + song.id)}`, '_blank')}
+                            title="Download song"
+                          >
+                            <Download className="w-4 h-4" />
                           </Button>
                           <Button 
                             variant="ghost" 

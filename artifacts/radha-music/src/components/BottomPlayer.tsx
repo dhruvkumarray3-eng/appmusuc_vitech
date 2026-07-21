@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { usePlayer } from "@/lib/player-context";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, Maximize2, Minimize2 } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, Maximize2, Minimize2, Download } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 export function BottomPlayer() {
@@ -9,6 +9,7 @@ export function BottomPlayer() {
   const videoIframeRef = useRef<HTMLIFrameElement>(null);
   const [volume, setVolume] = useState(100);
   const [isMuted, setIsMuted] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   // YouTube postMessage helper
   const ytCommand = (iframeRef: React.RefObject<HTMLIFrameElement | null>, func: string, args: any[] = []) => {
@@ -25,14 +26,19 @@ export function BottomPlayer() {
     ytCommand(audioIframeRef, isPlaying ? "playVideo" : "pauseVideo");
   }, [isPlaying, currentSong, isVideoOpen]);
 
-  // When video opens → silence + pause audio iframe; when video closes → resume
+  // When video opens → mute audio first (80ms delay), then show video to prevent double sound
   useEffect(() => {
     if (!currentSong) return;
     if (isVideoOpen) {
-      // Mute and pause audio iframe so only video plays
+      setVideoReady(false);
+      // Immediately mute + pause audio iframe
       ytCommand(audioIframeRef, "setVolume", [0]);
       ytCommand(audioIframeRef, "pauseVideo");
+      // Show video only after audio is silenced (prevents double sound)
+      const t = setTimeout(() => setVideoReady(true), 80);
+      return () => clearTimeout(t);
     } else {
+      setVideoReady(false);
       // Restore audio iframe volume and resume if playing
       ytCommand(audioIframeRef, "setVolume", [isMuted ? 0 : volume]);
       if (isPlaying) ytCommand(audioIframeRef, "playVideo");
@@ -49,6 +55,14 @@ export function BottomPlayer() {
       ytCommand(audioIframeRef, "setVolume", [v]);
     }
   }, [volume, isMuted, isVideoOpen]);
+
+  const handleDownload = () => {
+    if (!currentSong) return;
+    window.open(
+      `https://cobalt.tools/?url=${encodeURIComponent(`https://youtube.com/watch?v=${currentSong.id}`)}`,
+      "_blank"
+    );
+  };
 
   if (!currentSong) return null;
 
@@ -80,8 +94,8 @@ export function BottomPlayer() {
         }}
       />
 
-      {/* ── Full-screen video overlay ── */}
-      {isVideoOpen && (
+      {/* ── Full-screen video overlay (shown only after audio is muted) ── */}
+      {isVideoOpen && videoReady && (
         <div className="fixed inset-0 z-[200] bg-black flex flex-col">
           {/* Top bar */}
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/90 to-transparent absolute top-0 left-0 right-0 z-[202] pointer-events-none">
@@ -97,12 +111,21 @@ export function BottomPlayer() {
                 <p className="text-white/60 text-xs truncate">{currentSong.channelTitle || "YouTube"}</p>
               </div>
             </div>
-            <button
-              onClick={closeVideo}
-              className="pointer-events-auto shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="pointer-events-auto flex items-center gap-2">
+              <button
+                onClick={handleDownload}
+                title="Download"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <button
+                onClick={closeVideo}
+                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Video iframe */}
@@ -146,7 +169,7 @@ export function BottomPlayer() {
         </div>
 
         {/* Controls */}
-        <div className="flex-1 flex items-center justify-center gap-6">
+        <div className="flex-1 flex items-center justify-center gap-4 md:gap-6">
           <button onClick={playPrevious} className="text-foreground hover:text-primary transition-colors">
             <SkipBack className="w-5 h-5 fill-current" />
           </button>
@@ -166,6 +189,14 @@ export function BottomPlayer() {
             className={`transition-colors ${isVideoOpen ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
           >
             {isVideoOpen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+          {/* Download */}
+          <button
+            onClick={handleDownload}
+            title="Download song"
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Download className="w-4 h-4" />
           </button>
         </div>
 
