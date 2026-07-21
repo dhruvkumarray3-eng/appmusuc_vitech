@@ -1,10 +1,10 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useLocation } from "wouter";
 import { useGetHistory } from "@workspace/api-client-react";
 import { useGetFavorites } from "@workspace/api-client-react";
 import { useGetPlaylist } from "@workspace/api-client-react";
-import { User, History, Heart, ListMusic, LogOut, Camera, Check, X, Pencil } from "lucide-react";
+import { User, History, Heart, ListMusic, LogOut, Camera, Check, X, Pencil, AtSign } from "lucide-react";
 
 // Compress image to max 200×200 JPEG and return as base64 data URL
 async function compressImage(file: File): Promise<string> {
@@ -29,7 +29,7 @@ async function compressImage(file: File): Promise<string> {
 }
 
 export default function UserProfile() {
-  const { telegramId, isOwner, profileName, profilePhoto, updateProfile, userLogout, ownerLogout } = useAuth();
+  const { telegramId, isOwner, profileName, profileUsername, profilePhoto, updateProfile, userLogout, ownerLogout } = useAuth();
   const [, navigate] = useLocation();
 
   const { data: histData } = useGetHistory(telegramId ?? "", { query: { enabled: !!telegramId } });
@@ -43,6 +43,7 @@ export default function UserProfile() {
   // Edit state
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const [draftUsername, setDraftUsername] = useState("");
   const [draftPhoto, setDraftPhoto] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -50,6 +51,7 @@ export default function UserProfile() {
 
   const startEdit = () => {
     setDraftName(profileName ?? "");
+    setDraftUsername(profileUsername ?? "");
     setDraftPhoto(profilePhoto ?? null);
     setSaveMsg("");
     setEditing(true);
@@ -77,7 +79,7 @@ export default function UserProfile() {
     setSaving(true);
     setSaveMsg("");
     try {
-      await updateProfile(draftName.trim(), draftPhoto);
+      await updateProfile(draftName.trim(), draftUsername.trim(), draftPhoto);
       setSaveMsg("✅ Profile save ho gayi!");
       setTimeout(() => { setEditing(false); setSaveMsg(""); }, 1200);
     } catch {
@@ -121,7 +123,7 @@ export default function UserProfile() {
       </div>
 
       {/* Avatar + name card */}
-      <div className="rounded-2xl border border-border bg-card/50 p-5">
+      <div className="rounded-2xl border border-border bg-card/50 p-5 space-y-4">
         <div className="flex items-center gap-4">
           {/* Avatar */}
           <div className="relative shrink-0">
@@ -142,9 +144,31 @@ export default function UserProfile() {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
           </div>
 
-          {/* Name / edit */}
-          <div className="flex-1 min-w-0">
-            {editing ? (
+          {/* Name display (non-edit mode) */}
+          {!editing && (
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-bold text-white truncate">{displayName}</p>
+              {profileUsername && (
+                <p className="text-sm text-primary/80 mt-0.5">@{profileUsername}</p>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                {telegramId ? <>Telegram ID: <span className="font-mono text-foreground">{telegramId}</span></> : "Guest user"}
+              </p>
+              {isOwner && (
+                <span className="inline-block mt-1 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded-full px-2 py-0.5">
+                  OWNER
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Edit fields */}
+        {editing && (
+          <div className="space-y-3">
+            {/* Name */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Naam</label>
               <input
                 value={draftName}
                 onChange={(e) => setDraftName(e.target.value)}
@@ -153,41 +177,55 @@ export default function UserProfile() {
                 className="w-full px-3 py-2 rounded-lg bg-background/60 border border-primary/40 text-white text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
                 autoFocus
               />
-            ) : (
-              <p className="text-lg font-bold text-white truncate">{displayName}</p>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              {telegramId ? <>Telegram ID: <span className="font-mono text-foreground">{telegramId}</span></> : "Guest user"}
-            </p>
-            {isOwner && (
-              <span className="inline-block mt-1 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded-full px-2 py-0.5">
-                OWNER
-              </span>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Save / cancel buttons */}
-        {editing && (
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={saveProfile}
-              disabled={saving}
-              className="flex-1 py-2 rounded-xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-1.5 hover:bg-primary/90 transition-colors disabled:opacity-60"
-            >
-              <Check className="w-4 h-4" />
-              {saving ? "Saving..." : "Save"}
-            </button>
-            <button
-              onClick={cancelEdit}
-              disabled={saving}
-              className="flex-1 py-2 rounded-xl bg-muted text-foreground font-semibold text-sm flex items-center justify-center gap-1.5 hover:bg-muted/80 transition-colors"
-            >
-              <X className="w-4 h-4" /> Cancel
-            </button>
+            {/* Username */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Username</label>
+              <div className="relative">
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  value={draftUsername}
+                  onChange={(e) => setDraftUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+                  placeholder="username"
+                  maxLength={32}
+                  className="w-full pl-8 pr-3 py-2 rounded-lg bg-background/60 border border-primary/40 text-white text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Telegram ID (readonly) */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Telegram ID</label>
+              <input
+                value={telegramId ?? ""}
+                readOnly
+                className="w-full px-3 py-2 rounded-lg bg-background/30 border border-border text-muted-foreground text-sm cursor-not-allowed"
+              />
+            </div>
+
+            {/* Save / cancel */}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={saveProfile}
+                disabled={saving}
+                className="flex-1 py-2 rounded-xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-1.5 hover:bg-primary/90 transition-colors disabled:opacity-60"
+              >
+                <Check className="w-4 h-4" />
+                {saving ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={cancelEdit}
+                disabled={saving}
+                className="flex-1 py-2 rounded-xl bg-muted text-foreground font-semibold text-sm flex items-center justify-center gap-1.5 hover:bg-muted/80 transition-colors"
+              >
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </div>
           </div>
         )}
-        {saveMsg && <p className="text-sm text-center mt-3">{saveMsg}</p>}
+
+        {saveMsg && <p className="text-sm text-center">{saveMsg}</p>}
       </div>
 
       {/* Stats */}

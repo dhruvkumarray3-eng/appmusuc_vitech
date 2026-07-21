@@ -5,12 +5,13 @@ interface AuthContextType {
   isOwner: boolean;
   telegramId: string | null;
   profileName: string | null;
+  profileUsername: string | null;
   profilePhoto: string | null;
   loading: boolean;
   ownerLogin: (telegramId: string, password: string) => Promise<{ ok: boolean; reason?: string }>;
   ownerLogout: (telegramId: string) => Promise<void>;
   userLogout: () => void;
-  updateProfile: (name: string, photo: string | null) => Promise<void>;
+  updateProfile: (name: string, username: string, photo: string | null) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   isOwner: false,
   telegramId: null,
   profileName: null,
+  profileUsername: null,
   profilePhoto: null,
   loading: true,
   ownerLogin: async () => ({ ok: false }),
@@ -38,30 +40,45 @@ function getTelegramId(): string | null {
   return localStorage.getItem(OWNER_KEY);
 }
 
+// Get Telegram user info from WebApp if available
+function getTelegramUser(): { id: string; firstName?: string; username?: string; photoUrl?: string } | null {
+  try {
+    const tgUser = (window as any).Telegram?.WebApp?.initDataUnsafe?.user;
+    if (tgUser?.id) {
+      return {
+        id: String(tgUser.id),
+        firstName: tgUser.first_name ?? undefined,
+        username: tgUser.username ?? undefined,
+        photoUrl: tgUser.photo_url ?? undefined,
+      };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
   const [telegramId, setTelegramId] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
-  // Har 3 second mein status check karo (sab browsers pe live update)
+  // Har 3 second mein status check karo
   useEffect(() => {
     let active = true;
-
     const check = async () => {
       try {
         const res = await fetch(`${BASE}/api/auth/status`);
         const data = await res.json();
         if (active) setUnlocked(data.unlocked);
       } catch {
-        // server se connect nahi hua, thoda wait karo
+        // server se connect nahi hua
       } finally {
         if (active) setLoading(false);
       }
     };
-
     check();
     const interval = setInterval(check, 3000);
     return () => { active = false; clearInterval(interval); };
@@ -71,8 +88,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem(OWNER_KEY);
     setIsOwner(!!saved);
-    // telegramId: Telegram WebApp API se lo, warna owner ka saved ID
     setTelegramId(getTelegramId());
+  }, []);
+
+  // Auto-register Telegram Mini App users
+  useEffect(() => {
+    const tgUser = getTelegramUser();
+    if (!tgUser) return;
+    // Register/update user record via API
+    fetch(`${BASE}/api/auth/telegram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: tgUser.id,
+        firstName: tgUser.firstName ?? null,
+        username: tgUser.username ?? null,
+        photoUrl: tgUser.photoUrl ?? null,
+      }),
+    }).catch(() => {});
   }, []);
 
   const ownerLogin = async (telegramId: string, password: string): Promise<{ ok: boolean; reason?: string }> => {
@@ -106,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(OWNER_KEY);
     setIsOwner(false);
     setUnlocked(false);
-    setTelegramId(getTelegramId()); // WebApp ID rakhna hai agar available ho
+    setTelegramId(getTelegramId());
   };
 
   // Load profile from DB whenever telegramId changes
@@ -117,31 +150,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(data => {
         if (data) {
           setProfileName(data.firstName ?? null);
+          setProfileUsername(data.username ?? null);
           setProfilePhoto(data.photoUrl ?? null);
         }
       })
       .catch(() => {});
   }, [telegramId]);
 
-  // Update name + photo in DB and local state
-  const updateProfile = async (name: string, photo: string | null): Promise<void> => {
+  // Update name + username + photo in DB and local state
+  const updateProfile = async (name: string, username: string, photo: string | null): Promise<void> => {
     if (!telegramId) return;
     const res = await fetch(`${BASE}/api/user/${telegramId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName: name || null, photoUrl: photo }),
+      body: JSON.stringify({
+        firstName: name || null,
+        username: username || null,
+        photoUrl: photo,
+      }),
     });
     if (res.ok) {
       setProfileName(name || null);
+      setProfileUsername(username || null);
       setProfilePhoto(photo);
     }
   };
 
-  // Regular user logout — sirf local state clear, app band nahi hogi
+  // Regular user logout — sirf local state clear
   const userLogout = () => {
     localStorage.removeItem(OWNER_KEY);
     setIsOwner(false);
     setProfileName(null);
+    setProfileUsername(null);
     setProfilePhoto(null);
     setTelegramId(getTelegramId());
   };
@@ -149,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       unlocked, isOwner, telegramId,
-      profileName, profilePhoto,
+      profileName, profileUsername, profilePhoto,
       loading, ownerLogin, ownerLogout, userLogout, updateProfile,
     }}>
       {children}

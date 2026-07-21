@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { PlayerProvider } from '@/lib/player-context';
@@ -7,6 +8,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 import { Sidebar, BottomNav } from '@/components/Sidebar';
 import { BottomPlayer } from '@/components/BottomPlayer';
+import SplashScreen from '@/components/SplashScreen';
 
 import Login from '@/pages/Login';
 import Home from '@/pages/Home';
@@ -33,7 +35,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex h-[100dvh] bg-background text-foreground overflow-hidden">
         <Sidebar />
         <main className="flex-1 relative overflow-hidden flex flex-col">
-          {/* Main content area */}
           <div className="flex-1 relative">
             {children}
           </div>
@@ -62,9 +63,13 @@ function Router() {
 }
 
 function App() {
+  const [splashDone, setSplashDone] = useState(false);
+  const handleSplashDone = useCallback(() => setSplashDone(true), []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        {!splashDone && <SplashScreen onDone={handleSplashDone} />}
         <AuthProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <Router />

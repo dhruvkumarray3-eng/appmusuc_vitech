@@ -36,11 +36,12 @@ router.get("/user/:telegramId", async (req, res) => {
   }
 });
 
-// PATCH /api/user/:telegramId — update name and photo (upsert)
+// PATCH /api/user/:telegramId — update name, username and photo (upsert)
 router.patch("/user/:telegramId", async (req, res) => {
   const { telegramId } = req.params;
   const body = req.body ?? {};
   const firstName: string | undefined = typeof body.firstName === "string" ? body.firstName.slice(0, 64) : undefined;
+  const username: string | undefined = typeof body.username === "string" ? body.username.slice(0, 32) : undefined;
   const photoUrl: string | null | undefined =
     body.photoUrl === null ? null :
     typeof body.photoUrl === "string" ? body.photoUrl.slice(0, 500_000) : undefined;
@@ -56,12 +57,13 @@ router.patch("/user/:telegramId", async (req, res) => {
       // New user — create record
       const [u] = await db
         .insert(usersTable)
-        .values({ telegramId, firstName: firstName ?? null, photoUrl: photoUrl ?? null })
+        .values({ telegramId, firstName: firstName ?? null, username: username ?? null, photoUrl: photoUrl ?? null })
         .returning();
-      return res.json({ success: true, firstName: u.firstName, photoUrl: u.photoUrl });
+      return res.json({ success: true, firstName: u.firstName, username: u.username, photoUrl: u.photoUrl });
     } else {
       const updateData: Record<string, unknown> = { lastLogin: new Date() };
       if (firstName !== undefined) updateData.firstName = firstName;
+      if (username !== undefined) updateData.username = username;
       if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
 
       const [u] = await db
@@ -69,7 +71,7 @@ router.patch("/user/:telegramId", async (req, res) => {
         .set(updateData)
         .where(eq(usersTable.telegramId, telegramId))
         .returning();
-      return res.json({ success: true, firstName: u.firstName, photoUrl: u.photoUrl });
+      return res.json({ success: true, firstName: u.firstName, username: u.username, photoUrl: u.photoUrl });
     }
   } catch (e) {
     req.log.error(e);
