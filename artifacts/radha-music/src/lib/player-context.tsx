@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, useRef, ReactNode } from 'react';
 import { useAddHistory } from '@workspace/api-client-react';
 import { useAuth } from './auth-context';
 
@@ -31,6 +31,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<Song[]>([]);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
+  // Keep a history stack so SkipBack actually goes to the previous song
+  const historyRef = useRef<Song[]>([]);
+
   const { telegramId } = useAuth();
   const addHistory = useAddHistory();
 
@@ -38,28 +41,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const closeVideo = () => setIsVideoOpen(false);
 
   const playSong = (song: Song) => {
-    setCurrentSong(song);
+    // Push current song onto history before switching
+    setCurrentSong((prev) => {
+      if (prev && prev.id !== song.id) {
+        historyRef.current = [...historyRef.current.slice(-49), prev]; // keep last 50
+      }
+      return song;
+    });
     setIsPlaying(true);
-    
-    // Add to history
+
+    // Save to play history in DB
     if (telegramId) {
       addHistory.mutate({
         data: {
           telegramId,
-          song: {
-            id: song.id,
-            title: song.title,
-            thumbnail: song.thumbnail
-          }
-        }
+          song: { id: song.id, title: song.title, thumbnail: song.thumbnail },
+        },
       });
     }
   };
 
   const togglePlayPause = () => {
-    if (currentSong) {
-      setIsPlaying(!isPlaying);
-    }
+    if (currentSong) setIsPlaying((p) => !p);
   };
 
   const addToQueue = (song: Song) => {
@@ -68,17 +71,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const playNext = () => {
     if (queue.length > 0) {
-      const nextSong = queue[0];
-      setQueue((prev) => prev.slice(1));
-      playSong(nextSong);
+      const [next, ...rest] = queue;
+      setQueue(rest);
+      playSong(next);
     }
   };
 
   const playPrevious = () => {
-    // Basic implementation: just restarts current song if no real previous stack
-    if (currentSong) {
+    const prev = historyRef.current.at(-1);
+    if (prev) {
+      historyRef.current = historyRef.current.slice(0, -1);
+      // Directly set (don't push to history again)
+      setCurrentSong(prev);
+      setIsPlaying(true);
+    } else if (currentSong) {
+      // No history — restart current song by briefly toggling key via play state
       setIsPlaying(false);
-      setTimeout(() => setIsPlaying(true), 100);
+      setTimeout(() => setIsPlaying(true), 50);
     }
   };
 
@@ -103,8 +112,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
 export function usePlayer() {
   const context = useContext(PlayerContext);
-  if (!context) {
-    throw new Error('usePlayer must be used within a PlayerProvider');
-  }
+  if (!context) throw new Error('usePlayer must be used within a PlayerProvider');
   return context;
 }

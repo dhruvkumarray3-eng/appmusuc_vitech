@@ -7,6 +7,7 @@ import favoritesRouter from "./favorites";
 import playlistRouter from "./playlist";
 import musicRouter from "./music";
 import botRouter from "./bot";
+import downloadRouter from "./download";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(favoritesRouter);
 router.use(playlistRouter);
 router.use(musicRouter);
 router.use(botRouter);
+router.use(downloadRouter);
 
 export default router;

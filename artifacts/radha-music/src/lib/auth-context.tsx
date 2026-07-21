@@ -59,6 +59,17 @@ function getTelegramUser(): { id: string; firstName?: string; username?: string;
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Initialize Telegram Mini App
+  useEffect(() => {
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg) {
+        tg.ready();      // Tell Telegram the app is ready to be shown
+        tg.expand();     // Expand to full height, no lags from resize
+      }
+    } catch { /* browser env — ignore */ }
+  }, []);
   const [isOwner, setIsOwner] = useState(false);
   const [telegramId, setTelegramId] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
