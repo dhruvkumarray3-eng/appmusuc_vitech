@@ -24,7 +24,7 @@ timeoutMs = 20000
 [userenv.shared]
 YOUTUBE_API_KEY = "AIzaSyAJwGWTd-xoRRZLaA-fL9naZJ7d7Ufqebg"
 OWNER_TELEGRAM_ID = "8245258112"
-APP_URL = "https://c6eb4647-66ac-4791-b3f7-b4b7630b65f9-00-3fssj41o7plbn.sisko.replit.dev"
+APP_URL = "https://c1da83b5-24af-45fb-b1c1-fe0afde62bd5-00-4e9w53kx9zew.pike.replit.dev"
 OWNER_PASSWORD = "9006730353"
 
 [nix]
