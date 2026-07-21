@@ -77,7 +77,7 @@ router.get("/bot/register-webhook", async (req, res) => {
     // Commands register NAHI karte — owner khud karega
   ]);
 
-  return res.json({ webhookUrl, webhook: webhookResult, menuButton: menuResult });
+  return res.json({ webhookUrl, webhook: webhookResult, menuButton: menuResult, heartbeatUrl: `${APP_URL}/api/healthz` });
 });
 
 // GET /api/bot/reset — emergency reset

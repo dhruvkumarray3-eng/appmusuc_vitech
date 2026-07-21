@@ -76,6 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
+  // ── Frontend heartbeat: Mini App khuli ho to har 4 min pe backend ping karo ──
+  useEffect(() => {
+    const ping = () => {
+      fetch(`${BASE}/api/healthz`).catch(() => {});
+    };
+    ping(); // immediate ping on mount
+    const interval = setInterval(ping, 4 * 60 * 1000); // every 4 minutes
+    return () => clearInterval(interval);
+  }, []);
+
   // Har 3 second mein status check karo
   useEffect(() => {
     let active = true;

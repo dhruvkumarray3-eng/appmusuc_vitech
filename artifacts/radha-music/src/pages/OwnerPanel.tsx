@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import {
   Shield, Users, Activity, Radio, Lock, Unlock,
   LogOut, RefreshCw, Clock, Eye, EyeOff, KeyRound,
-  Camera, Check, X, Pencil, AtSign
+  Camera, Check, X, Pencil, AtSign, Heart, Copy, CheckCheck
 } from "lucide-react";
 
 interface Stats {
@@ -426,6 +426,9 @@ function PanelContent() {
         )}
       </div>
 
+      {/* Heartbeat / Uptime Info */}
+      <HeartbeatCard />
+
       {/* Logout */}
       <button
         onClick={handleLogout}
@@ -435,6 +438,63 @@ function PanelContent() {
         <LogOut className="w-4 h-4" />
         {loggingOut ? "Logging out..." : "Owner Logout (App Band Ho Jaayegi)"}
       </button>
+    </div>
+  );
+}
+
+// ── Heartbeat / Uptime card ──────────────────────────────────────────────────
+function HeartbeatCard() {
+  const [ping, setPing] = useState<"idle" | "ok" | "fail">("idle");
+  const [copied, setCopied] = useState(false);
+  const heartbeatUrl = `${BASE}/api/healthz`;
+
+  // Ping on mount
+  useEffect(() => {
+    fetch(heartbeatUrl)
+      .then((r) => setPing(r.ok ? "ok" : "fail"))
+      .catch(() => setPing("fail"));
+  }, [heartbeatUrl]);
+
+  const copy = () => {
+    navigator.clipboard.writeText(heartbeatUrl).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="rounded-2xl border border-pink-500/20 bg-pink-500/5 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Heart className={`w-4 h-4 ${ping === "ok" ? "text-pink-400 animate-pulse" : "text-muted-foreground"}`} />
+        <p className="text-sm font-semibold text-pink-400">Heartbeat — 24/7 Alive</p>
+        <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+          ping === "ok" ? "bg-green-500/20 text-green-400" :
+          ping === "fail" ? "bg-red-500/20 text-red-400" :
+          "bg-muted text-muted-foreground"
+        }`}>
+          {ping === "ok" ? "● Online" : ping === "fail" ? "● Offline" : "Checking…"}
+        </span>
+      </div>
+
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Backend har 4 min pe khud ko ping karta hai. Mini App khuli ho tab frontend bhi ping karta hai.
+        24/7 alive rakhne ke liye is URL ko <span className="text-pink-400 font-medium">UptimeRobot</span> ya
+        kisi bhi free monitor mein daalo:
+      </p>
+
+      <div className="flex items-center gap-2 bg-background/60 border border-pink-500/20 rounded-xl px-3 py-2">
+        <code className="text-xs text-pink-300 flex-1 truncate">{heartbeatUrl}</code>
+        <button
+          onClick={copy}
+          className="shrink-0 text-muted-foreground hover:text-pink-400 transition-colors"
+          title="Copy URL"
+        >
+          {copied ? <CheckCheck className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+
+      <p className="text-[10px] text-muted-foreground">
+        UptimeRobot.com → Add Monitor → HTTP(s) → URL paste karo → Every 5 min → Save ✅
+      </p>
     </div>
   );
 }
