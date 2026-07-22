@@ -87,7 +87,7 @@ export function BottomPlayer() {
             </div>
             <div className="pointer-events-auto flex items-center gap-2">
               <div className="[&_button]:w-9 [&_button]:h-9 [&_button]:rounded-full [&_button]:bg-white/10 [&_button]:hover:bg-white/20 [&_button]:text-white [&_button]:flex [&_button]:items-center [&_button]:justify-center [&_button]:transition-colors">
-                <DownloadMenu songId={currentSong.id} songTitle={currentSong.title} triggerClass="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" />
+                <DownloadMenu songId={currentSong.id} songTitle={currentSong.title} channelTitle={currentSong.channelTitle} triggerClass="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" />
               </div>
               <button onClick={closeVideo} className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
                 <X className="w-5 h-5" />
@@ -152,6 +152,7 @@ export function BottomPlayer() {
           <DownloadMenu
             songId={currentSong.id}
             songTitle={currentSong.title}
+            channelTitle={currentSong.channelTitle}
             triggerClass="text-muted-foreground hover:text-green-400 transition-colors"
           />
         </div>

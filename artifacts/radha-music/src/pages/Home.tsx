@@ -239,6 +239,7 @@ export default function Home() {
                           <DownloadMenu
                             songId={song.id}
                             songTitle={song.title}
+                            channelTitle={song.channelTitle}
                             triggerClass="h-9 w-9 flex items-center justify-center rounded-full text-muted-foreground hover:text-green-400 hover:bg-green-400/10 transition-colors"
                           />
                           <Button 
